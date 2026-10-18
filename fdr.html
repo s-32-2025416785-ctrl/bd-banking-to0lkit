@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDR Maturity Calculator</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input,select{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.big{font-size:2.2rem;font-weight:800;color:var(--accent);margin:0}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.row span:last-child{font-weight:600}
+.tax{color:var(--warm)}
+.err{color:var(--warm);font-weight:600}
+a{color:var(--accent);font-weight:600}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<p><a href="index.html">Back to EMI calculator</a></p>
+<h1>FDR Maturity Calculator</h1>
+<p class="sub">See what your fixed deposit grows to, before and after tax.</p>
+
+<div class="box">
+<label for="amt">Deposit amount (৳)</label>
+<input id="amt" type="number" inputmode="decimal" value="100000" min="1">
+<label for="rate">Yearly interest rate (%)</label>
+<input id="rate" type="number" inputmode="decimal" value="8" min="0" step="0.1">
+<label for="yrs">Period (years)</label>
+<input id="yrs" type="number" inputmode="decimal" value="1" min="0.1" step="0.5">
+<label for="comp">Interest added</label>
+<select id="comp">
+<option value="12">Monthly</option>
+<option value="4" selected>Quarterly</option>
+<option value="2">Half-yearly</option>
+<option value="1">Yearly</option>
+</select>
+<label for="tax">Tax on interest (%)</label>
+<input id="tax" type="number" inputmode="decimal" value="10" min="0" step="0.5">
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<footer>Maturity = P × (1 + r/m)^(m × years), where r is the yearly rate and m is how many times interest is added per year. The tax rate depends on your bank and your TIN status, so check with your bank. This is an estimate.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function calc(){
+  const P = parseFloat($("amt").value);
+  const r = parseFloat($("rate").value) / 100;
+  const t = parseFloat($("yrs").value);
+  const m = parseInt($("comp").value);
+  const tax = parseFloat($("tax").value);
+  const out = $("out");
+
+  if (!(P > 0) || !(r >= 0) || !(t > 0) || !(tax >= 0 && tax <= 100)) {
+    out.innerHTML = '<span class="err">Enter an amount, a rate (0 or more), a period above 0 and a tax between 0 and 100.</span>';
+    return;
+  }
+
+  const gross = P * Math.pow(1 + r / m, m * t);
+  const interest = gross - P;
+  const taxAmt = interest * tax / 100;
+  const net = gross - taxAmt;
+
+  out.innerHTML =
+    '<p class="big">' + fmt(net) + '</p><div style="color:var(--mute)">you receive at maturity, after tax</div>' +
+    '<div class="row"><span>Deposit</span><span>' + fmt(P) + '</span></div>' +
+    '<div class="row"><span>Interest earned</span><span>' + fmt(interest) + '</span></div>' +
+    '<div class="row"><span>Tax on interest</span><span class="tax">' + fmt(taxAmt) + '</span></div>' +
+    '<div class="row"><span>Value before tax</span><span>' + fmt(gross) + '</span></div>';
+}
+
+["amt","rate","yrs","comp","tax"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
