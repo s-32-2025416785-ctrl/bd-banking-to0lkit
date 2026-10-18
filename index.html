@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BD Loan EMI Calculator</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{width:100%;margin-top:16px;padding:12px;font:inherit;font-weight:700;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.emi{font-size:2.4rem;font-weight:800;color:var(--accent);margin:0}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.row span:last-child{font-weight:600}
+.int{color:var(--warm)}
+.err{color:var(--warm);font-weight:600}
+.scroll{max-height:320px;overflow:auto;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--card)}
+th:first-child,td:first-child{text-align:left}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Loan EMI Calculator</h1>
+<p class="sub">See your monthly payment, total interest and full repayment schedule in taka.</p>
+
+<div class="box">
+<label for="amt">Loan amount (৳)</label>
+<input id="amt" type="number" inputmode="decimal" value="500000" min="1">
+<label for="rate">Yearly interest rate (%)</label>
+<input id="rate" type="number" inputmode="decimal" value="12" min="0" step="0.1">
+<label for="yrs">Loan period (years)</label>
+<input id="yrs" type="number" inputmode="decimal" value="3" min="0.1" step="0.5">
+<button id="go">Calculate EMI</button>
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<div class="box">
+<strong>Repayment schedule</strong>
+<div class="scroll"><table id="tbl"></table></div>
+</div>
+
+<footer>EMI = P × r × (1+r)ⁿ ÷ ((1+r)ⁿ − 1), where r is the monthly rate and n is the number of months. Banks may add fees, so use this as an estimate.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function calc(){
+  const P = parseFloat($("amt").value);
+  const yearly = parseFloat($("rate").value);
+  const years = parseFloat($("yrs").value);
+  const out = $("out"), tbl = $("tbl");
+
+  if (!(P > 0) || !(yearly >= 0) || !(years > 0)) {
+    out.innerHTML = '<span class="err">Enter a loan amount, a rate (0 or more) and a period above 0.</span>';
+    tbl.innerHTML = "";
+    return;
+  }
+
+  const n = Math.round(years * 12);
+  const r = yearly / 12 / 100;
+  const emi = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const total = emi * n;
+
+  out.innerHTML =
+    '<p class="emi">' + fmt(emi) + '</p><div style="color:var(--mute)">per month for ' + n + ' months</div>' +
+    '<div class="row"><span>Loan amount</span><span>' + fmt(P) + '</span></div>' +
+    '<div class="row"><span>Total interest</span><span class="int">' + fmt(total - P) + '</span></div>' +
+    '<div class="row"><span>Total payable</span><span>' + fmt(total) + '</span></div>';
+
+  let bal = P, rows = "<tr><th>Month</th><th>Principal</th><th>Interest</th><th>Balance</th></tr>";
+  for (let m = 1; m <= n; m++) {
+    const interest = bal * r;
+    const principal = emi - interest;
+    bal = Math.max(bal - principal, 0);
+    rows += "<tr><td>" + m + "</td><td>" + fmt(principal) + "</td><td>" + fmt(interest) + "</td><td>" + fmt(bal) + "</td></tr>";
+  }
+  tbl.innerHTML = rows;
+}
+
+$("go").addEventListener("click", calc);
+["amt","rate","yrs"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
