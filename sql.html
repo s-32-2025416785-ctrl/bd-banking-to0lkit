@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Practice: BD Bank</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+select,textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;min-height:170px;margin-top:10px;resize:vertical}
+select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:10px;margin-top:10px}
+button{flex:1;padding:12px;font:inherit;font-weight:700;border:0;border-radius:8px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.scroll{overflow-x:auto;max-height:340px;overflow-y:auto;margin-top:8px}
+table{border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums;width:100%}
+th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--card)}
+.err{color:var(--warm);font-weight:600}
+.note{color:var(--mute);font-size:.9rem}
+a{color:var(--accent);font-weight:600}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<p><a href="index.html">EMI calculator</a> · <a href="fdr.html">FDR calculator</a></p>
+<h1>SQL Practice: BD Bank</h1>
+<p class="sub">Write a query, tap Run, and see the result. The data is made up.</p>
+
+<div class="box">
+<select id="pick" aria-label="Example queries"><option value="">Pick an example query...</option></select>
+<textarea id="sql" spellcheck="false" aria-label="SQL query">SELECT * FROM customers;</textarea>
+<div class="btns">
+<button id="run">Run</button>
+<button id="reset" class="alt">Reset database</button>
+</div>
+</div>
+
+<div class="box" id="out" aria-live="polite">Loading database...</div>
+
+<div class="box note">
+<strong>Tables</strong><br>
+<code>customers</code> (customer_id, name, city, join_date)<br>
+<code>accounts</code> (account_id, customer_id, type, balance, opened_on)<br>
+<code>loans</code> (loan_id, customer_id, amount, rate, months, start_date, status)<br>
+<code>transactions</code> (txn_id, account_id, txn_date, type, amount)
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script>
+const SETUP = `
+CREATE TABLE customers (customer_id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, join_date TEXT NOT NULL);
+CREATE TABLE accounts (account_id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, type TEXT NOT NULL, balance REAL NOT NULL, opened_on TEXT NOT NULL);
+CREATE TABLE loans (loan_id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, amount REAL NOT NULL, rate REAL NOT NULL, months INTEGER NOT NULL, start_date TEXT NOT NULL, status TEXT NOT NULL);
+CREATE TABLE transactions (txn_id INTEGER PRIMARY KEY, account_id INTEGER NOT NULL, txn_date TEXT NOT NULL, type TEXT NOT NULL, amount REAL NOT NULL);
+
+INSERT INTO customers VALUES
+(1,'Rahim Uddin','Dhaka','2022-03-10'),
+(2,'Nusrat Jahan','Chattogram','2021-07-22'),
+(3,'Tanvir Hasan','Dhaka','2023-01-15'),
+(4,'Sadia Akter','Sylhet','2020-11-05'),
+(5,'Imran Hossain','Rajshahi','2022-09-30'),
+(6,'Farhana Islam','Dhaka','2023-06-18'),
+(7,'Kamal Mia','Khulna','2021-02-12'),
+(8,'Ritu Barua','Chattogram','2024-01-08');
+
+INSERT INTO accounts VALUES
+(101,1,'Savings',250000,'2022-03-10'),
+(102,1,'Current',80000,'2022-05-01'),
+(103,2,'Savings',420000,'2021-07-22'),
+(104,3,'Savings',35000,'2023-01-15'),
+(105,4,'FDR',1000000,'2020-11-05'),
+(106,4,'Savings',150000,'2021-01-10'),
+(107,5,'Current',60000,'2022-09-30'),
+(108,6,'Savings',95000,'2023-06-18'),
+(109,7,'Savings',12000,'2021-02-12'),
+(110,8,'Savings',70000,'2024-01-08');
+
+INSERT INTO loans VALUES
+(1,1,500000,11.5,36,'2024-02-01','active'),
+(2,2,1200000,10.0,60,'2023-05-15','active'),
+(3,3,150000,13.0,24,'2024-03-01','overdue'),
+(4,5,300000,12.0,36,'2023-08-10','overdue'),
+(5,6,80000,14.0,12,'2024-06-01','paid'),
+(6,7,200000,12.5,24,'2024-01-20','active');
+
+INSERT INTO transactions VALUES
+(1,101,'2025-01-05','deposit',50000),
+(2,101,'2025-01-20','withdraw',10000),
+(3,103,'2025-01-07','deposit',100000),
+(4,103,'2025-02-02','withdraw',25000),
+(5,104,'2025-01-12','deposit',5000),
+(6,105,'2025-01-15','deposit',200000),
+(7,107,'2025-02-10','withdraw',15000),
+(8,108,'2025-02-14','deposit',20000),
+(9,108,'2025-03-01','withdraw',5000),
+(10,110,'2025-03-05','deposit',30000),
+(11,102,'2025-03-10','deposit',40000),
+(12,103,'2025-03-15','deposit',60000);
+`;
+
+const EXAMPLES = [
+["1. Customers in Dhaka", "SELECT * FROM customers WHERE city = 'Dhaka';"],
+["2. Accounts over 100,000", "SELECT account_id, type, balance\nFROM accounts\nWHERE balance > 100000\nORDER BY balance DESC;"],
+["3. Count customers", "SELECT COUNT(*) AS total_customers FROM customers;"],
+["4. Accounts with owner name", "SELECT c.name, a.type, a.balance\nFROM customers c\nJOIN accounts a ON a.customer_id = c.customer_id\nORDER BY c.name;"],
+["5. Overdue loans", "SELECT c.name, c.city, l.amount, l.start_date\nFROM loans l\nJOIN customers c ON c.customer_id = l.customer_id\nWHERE l.status = 'overdue';"],
+["6. Balance by city", "SELECT c.city, SUM(a.balance) AS total_balance\nFROM customers c\nJOIN accounts a ON a.customer_id = c.customer_id\nGROUP BY c.city\nORDER BY total_balance DESC;"],
+["7. Accounts by type", "SELECT type, COUNT(*) AS accounts, ROUND(AVG(balance)) AS avg_balance\nFROM accounts\nGROUP BY type;"],
+["8. Customers above 200,000", "SELECT c.name, SUM(a.balance) AS total_balance\nFROM customers c\nJOIN accounts a ON a.customer_id = c.customer_id\nGROUP BY c.customer_id, c.name\nHAVING SUM(a.balance) > 200000\nORDER BY total_balance DESC;"],
+["9. Customers with no loan", "SELECT name, city\nFROM customers\nWHERE customer_id NOT IN (SELECT customer_id FROM loans);"],
+["10. Loans by status", "SELECT status, COUNT(*) AS loans, SUM(amount) AS total_amount\nFROM loans\nGROUP BY status;"],
+["11. Top 3 depositors", "SELECT c.name, SUM(t.amount) AS total_deposited\nFROM transactions t\nJOIN accounts a ON a.account_id = t.account_id\nJOIN customers c ON c.customer_id = a.customer_id\nWHERE t.type = 'deposit'\nGROUP BY c.customer_id, c.name\nORDER BY total_deposited DESC\nLIMIT 3;"],
+["12. Rank inside each city", "WITH totals AS (\n  SELECT c.name, c.city, SUM(a.balance) AS total_balance\n  FROM customers c\n  JOIN accounts a ON a.customer_id = c.customer_id\n  GROUP BY c.customer_id, c.name, c.city\n)\nSELECT city, name, total_balance,\n  RANK() OVER (PARTITION BY city ORDER BY total_balance DESC) AS rank_in_city\nFROM totals\nORDER BY city, rank_in_city;"],
+["13. Running net, account 103", "SELECT txn_date, type, amount,\n  SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END)\n    OVER (ORDER BY txn_date, txn_id) AS running_net\nFROM transactions\nWHERE account_id = 103\nORDER BY txn_date, txn_id;"],
+["14. Overdue loan share (%)", "SELECT ROUND(\n  100.0 * SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) / SUM(amount), 1\n) AS overdue_percent\nFROM loans;"]
+];
+
+const $ = id => document.getElementById(id);
+let SQL, db;
+
+function newDb(){
+  db = new SQL.Database();
+  db.run(SETUP);
+}
+
+function show(results){
+  const out = $("out");
+  out.innerHTML = "";
+  if (!results.length) { out.textContent = "Done. This query returned no rows."; return; }
+  results.forEach(r => {
+    const info = document.createElement("div");
+    info.className = "note";
+    info.textContent = r.values.length + " row" + (r.values.length === 1 ? "" : "s");
+    const wrap = document.createElement("div");
+    wrap.className = "scroll";
+    const t = document.createElement("table");
+    const head = t.insertRow();
+    r.columns.forEach(c => { const th = document.createElement("th"); th.textContent = c; head.appendChild(th); });
+    r.values.forEach(row => {
+      const tr = t.insertRow();
+      row.forEach(v => { tr.insertCell().textContent = v === null ? "NULL" : v; });
+    });
+    wrap.appendChild(t);
+    out.appendChild(info);
+    out.appendChild(wrap);
+  });
+}
+
+function run(){
+  if (!db) return;
+  try {
+    show(db.exec($("sql").value));
+  } catch (e) {
+    $("out").innerHTML = "";
+    const p = document.createElement("span");
+    p.className = "err";
+    p.textContent = "Error: " + e.message;
+    $("out").appendChild(p);
+  }
+}
+
+EXAMPLES.forEach((ex, i) => {
+  const o = document.createElement("option");
+  o.value = i; o.textContent = ex[0];
+  $("pick").appendChild(o);
+});
+
+$("pick").addEventListener("change", () => {
+  const i = $("pick").value;
+  if (i === "") return;
+  $("sql").value = EXAMPLES[i][1];
+  run();
+});
+$("run").addEventListener("click", run);
+$("reset").addEventListener("click", () => { newDb(); $("out").textContent = "Database reset. Run a query."; });
+$("sql").addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") run(); });
+
+initSqlJs({ locateFile: f => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/" + f })
+  .then(S => { SQL = S; newDb(); run(); })
+  .catch(() => { $("out").textContent = "Could not load the SQL engine. Check your internet and refresh."; });
+</script>
+</body>
+</html>
