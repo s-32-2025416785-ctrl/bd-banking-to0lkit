@@ -27,4 +27,18 @@ EMI = P × r × (1+r)^n ÷ ((1+r)^n − 1)
 
 P is the loan amount, r is the monthly interest rate and n is the number of months.
 
+## 2. FDR Maturity Calculator
+
+Enter a deposit, yearly rate, period, how often interest is added and the tax rate. It shows the interest earned, tax and the final amount you receive.
+
+**Live page:** https://s-32-2025416785-ctrl.github.io/bd-banking-to0lkit/fdr.html
+
+## 3. SQL Practice (runs in the browser)
+
+A made-up bank database with four tables: customers, accounts, loans and transactions. Write a query, tap Run, and see the result, with 14 solved examples from easy to hard.
+
+**Try it:** https://s-32-2025416785-ctrl.github.io/bd-banking-to0lkit/sql.html
+
+The same files are in the `sql/` folder (`setup.sql` and `queries.sql`).
+
 All customer names and numbers are made up for practice.
