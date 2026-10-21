@@ -9,6 +9,7 @@
     ["banks.html", "Banks"],
     ["real.html", "Inflation"],
     ["cards.html", "Flashcards"],
+    ["dashboard.html", "Dashboard"],
     ["sql.html", "SQL"]
   ];
   var here = location.pathname.split("/").pop() || "index.html";
