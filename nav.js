@@ -5,6 +5,7 @@
     ["dps.html", "DPS"],
     ["savings.html", "Savings"],
     ["compare.html", "Compare"],
+    ["banks.html", "Banks"],
     ["real.html", "Inflation"],
     ["sql.html", "SQL"]
   ];
@@ -23,4 +24,4 @@
     }
     nav.appendChild(a);
   });
-})(); 
+})();
