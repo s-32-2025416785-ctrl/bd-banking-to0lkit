@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Dashboard</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .n{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.kpi .l{color:var(--mute);font-size:.85rem}
+details{margin-top:8px;color:var(--mute);font-size:.85rem}
+summary{cursor:pointer;color:var(--accent);font-weight:600}
+pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;margin:6px 0 0;background:var(--bg);padding:8px;border-radius:8px}
+summary:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.err{color:var(--warm);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Bank Dashboard</h1>
+<p class="sub">Every chart below is drawn from a real SQL query on the practice database. Tap "Show SQL" to see it.</p>
+
+<div class="kpis" id="kpis"></div>
+<div id="panels">Loading...</div>
+</main>
+
+<script src="charts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script>
+const SETUP = `
+CREATE TABLE customers (customer_id INTEGER PRIMARY KEY, name TEXT, city TEXT, join_date TEXT);
+CREATE TABLE accounts (account_id INTEGER PRIMARY KEY, customer_id INTEGER, type TEXT, balance REAL, opened_on TEXT);
+CREATE TABLE loans (loan_id INTEGER PRIMARY KEY, customer_id INTEGER, amount REAL, rate REAL, months INTEGER, start_date TEXT, status TEXT);
+CREATE TABLE transactions (txn_id INTEGER PRIMARY KEY, account_id INTEGER, txn_date TEXT, type TEXT, amount REAL);
+
+INSERT INTO customers VALUES
+(1,'Rahim Uddin','Dhaka','2022-03-10'),(2,'Nusrat Jahan','Chattogram','2021-07-22'),
+(3,'Tanvir Hasan','Dhaka','2023-01-15'),(4,'Sadia Akter','Sylhet','2020-11-05'),
+(5,'Imran Hossain','Rajshahi','2022-09-30'),(6,'Farhana Islam','Dhaka','2023-06-18'),
+(7,'Kamal Mia','Khulna','2021-02-12'),(8,'Ritu Barua','Chattogram','2024-01-08');
+
+INSERT INTO accounts VALUES
+(101,1,'Savings',250000,'2022-03-10'),(102,1,'Current',80000,'2022-05-01'),
+(103,2,'Savings',420000,'2021-07-22'),(104,3,'Savings',35000,'2023-01-15'),
+(105,4,'FDR',1000000,'2020-11-05'),(106,4,'Savings',150000,'2021-01-10'),
+(107,5,'Current',60000,'2022-09-30'),(108,6,'Savings',95000,'2023-06-18'),
+(109,7,'Savings',12000,'2021-02-12'),(110,8,'Savings',70000,'2024-01-08');
+
+INSERT INTO loans VALUES
+(1,1,500000,11.5,36,'2024-02-01','active'),(2,2,1200000,10.0,60,'2023-05-15','active'),
+(3,3,150000,13.0,24,'2024-03-01','overdue'),(4,5,300000,12.0,36,'2023-08-10','overdue'),
+(5,6,80000,14.0,12,'2024-06-01','paid'),(6,7,200000,12.5,24,'2024-01-20','active');
+
+INSERT INTO transactions VALUES
+(1,101,'2025-01-05','deposit',50000),(2,101,'2025-01-20','withdraw',10000),
+(3,103,'2025-01-07','deposit',100000),(4,103,'2025-02-02','withdraw',25000),
+(5,104,'2025-01-12','deposit',5000),(6,105,'2025-01-15','deposit',200000),
+(7,107,'2025-02-10','withdraw',15000),(8,108,'2025-02-14','deposit',20000),
+(9,108,'2025-03-01','withdraw',5000),(10,110,'2025-03-05','deposit',30000),
+(11,102,'2025-03-10','deposit',40000),(12,103,'2025-03-15','deposit',60000);
+`;
+
+const KPIS = [
+  ["Customers", "SELECT COUNT(*) FROM customers", v => String(v)],
+  ["Total deposits", "SELECT SUM(balance) FROM accounts", v => BankCharts.fmt(v)],
+  ["Loans given", "SELECT SUM(amount) FROM loans", v => BankCharts.fmt(v)],
+  ["Overdue loans", "SELECT ROUND(100.0 * SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) / SUM(amount), 1) FROM loans", v => v + "%"]
+];
+
+const PANELS = [
+  ["Deposits by city", "SELECT c.city, SUM(a.balance)\nFROM customers c\nJOIN accounts a ON a.customer_id = c.customer_id\nGROUP BY c.city\nORDER BY 2 DESC", v => BankCharts.fmt(v)],
+  ["Accounts by type", "SELECT type, COUNT(*)\nFROM accounts\nGROUP BY type\nORDER BY 2 DESC", v => String(v)],
+  ["Loan money by status", "SELECT status, SUM(amount)\nFROM loans\nGROUP BY status\nORDER BY 2 DESC", v => BankCharts.fmt(v)],
+  ["Deposits vs withdrawals", "SELECT type, SUM(amount)\nFROM transactions\nGROUP BY type", v => BankCharts.fmt(v)],
+  ["Top 5 customers by total balance", "SELECT c.name, SUM(a.balance)\nFROM customers c\nJOIN accounts a ON a.customer_id = c.customer_id\nGROUP BY c.customer_id, c.name\nORDER BY 2 DESC\nLIMIT 5", v => BankCharts.fmt(v)]
+];
+
+function build(db){
+  const kp = document.getElementById("kpis");
+  KPIS.forEach(k => {
+    const val = db.exec(k[1])[0].values[0][0];
+    const d = document.createElement("div");
+    d.className = "kpi";
+    const n = document.createElement("div");
+    n.className = "n"; n.textContent = k[2](val);
+    const l = document.createElement("div");
+    l.className = "l"; l.textContent = k[0];
+    d.appendChild(n); d.appendChild(l);
+    kp.appendChild(d);
+  });
+
+  const host = document.getElementById("panels");
+  host.innerHTML = "";
+  PANELS.forEach(p => {
+    const box = document.createElement("div");
+    box.className = "box";
+    const h = document.createElement("h2");
+    h.textContent = p[0];
+    box.appendChild(h);
+    const rows = db.exec(p[1])[0].values;
+    BankCharts.bars(box, rows, p[2]);
+    const det = document.createElement("details");
+    const sum = document.createElement("summary");
+    sum.textContent = "Show SQL";
+    const pre = document.createElement("pre");
+    pre.textContent = p[1];
+    det.appendChild(sum); det.appendChild(pre);
+    box.appendChild(det);
+    host.appendChild(box);
+  });
+}
+
+initSqlJs({ locateFile: f => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/" + f })
+  .then(SQL => { const db = new SQL.Database(); db.run(SETUP); build(db); })
+  .catch(() => { document.getElementById("panels").innerHTML = '<span class="err">Could not load the SQL engine. Check your internet and refresh.</span>'; });
+</script>
+</body>
+</html>
