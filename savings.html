@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savings Goal Planner</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.big{font-size:2.2rem;font-weight:800;color:var(--accent);margin:0}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.row span:last-child{font-weight:600}
+.err{color:var(--warm);font-weight:600}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Savings Goal Planner</h1>
+<p class="sub">Find out how much to save every month to reach your goal.</p>
+
+<div class="box">
+<label for="goal">Goal amount (৳)</label>
+<input id="goal" type="number" inputmode="decimal" value="200000" min="1">
+<label for="yrs">Time to reach it (years)</label>
+<input id="yrs" type="number" inputmode="decimal" value="2" min="0.1" step="0.5">
+<label for="rate">Yearly interest on your savings (%)</label>
+<input id="rate" type="number" inputmode="decimal" value="6" min="0" step="0.1">
+<label for="have">Already saved (৳)</label>
+<input id="have" type="number" inputmode="decimal" value="0" min="0">
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<footer>Assumes you deposit the same amount at the end of each month and interest is added monthly. Real bank rates and rules vary, so treat this as an estimate.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function calc(){
+  const G = parseFloat($("goal").value);
+  const t = parseFloat($("yrs").value);
+  const r = parseFloat($("rate").value);
+  const S = parseFloat($("have").value) || 0;
+  const out = $("out");
+
+  if (!(G > 0) || !(t > 0) || !(r >= 0) || !(S >= 0)) {
+    out.innerHTML = '<span class="err">Enter a goal and time above 0, and a rate and savings of 0 or more.</span>';
+    return;
+  }
+
+  const n = Math.max(1, Math.round(t * 12));
+  const i = r / 100 / 12;
+  const growth = S * Math.pow(1 + i, n);
+  const need = G - growth;
+
+  if (need <= 0) {
+    out.innerHTML = '<p class="big">৳0</p><div style="color:var(--mute)">per month. What you have saved will grow past your goal on its own.</div>';
+    return;
+  }
+
+  const pmt = i === 0 ? need / n : need * i / (Math.pow(1 + i, n) - 1);
+  const deposited = pmt * n + S;
+
+  out.innerHTML =
+    '<p class="big">' + fmt(pmt) + '</p><div style="color:var(--mute)">to save every month for ' + n + ' months</div>' +
+    '<div class="row"><span>Your goal</span><span>' + fmt(G) + '</span></div>' +
+    '<div class="row"><span>Total you put in</span><span>' + fmt(deposited) + '</span></div>' +
+    '<div class="row"><span>Interest you earn</span><span>' + fmt(G - deposited) + '</span></div>';
+}
+
+["goal","yrs","rate","have"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
