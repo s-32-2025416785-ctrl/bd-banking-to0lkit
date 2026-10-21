@@ -2,8 +2,10 @@
   var pages = [
     ["index.html", "EMI"],
     ["fdr.html", "FDR"],
+    ["dps.html", "DPS"],
     ["savings.html", "Savings"],
     ["compare.html", "Compare"],
+    ["real.html", "Inflation"],
     ["sql.html", "SQL"]
   ];
   var here = location.pathname.split("/").pop() || "index.html";
