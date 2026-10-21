@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Comparison</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h2{font-size:1.1rem;margin:0 0 4px;color:var(--accent)}
+.verdict{font-size:1.2rem;font-weight:800;color:var(--accent);margin:0 0 10px}
+.err{color:var(--warm);font-weight:600}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.best td{font-weight:700}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Loan Comparison</h1>
+<p class="sub">Put two loan offers side by side and see which one costs less.</p>
+
+<div class="box">
+<label for="amt">Loan amount (৳)</label>
+<input id="amt" type="number" inputmode="decimal" value="500000" min="1">
+</div>
+
+<div class="box">
+<h2>Bank A</h2>
+<label for="ra">Yearly interest rate (%)</label>
+<input id="ra" type="number" inputmode="decimal" value="11" min="0" step="0.1">
+<label for="ya">Period (years)</label>
+<input id="ya" type="number" inputmode="decimal" value="3" min="0.1" step="0.5">
+<label for="fa">Processing fee (%)</label>
+<input id="fa" type="number" inputmode="decimal" value="1" min="0" step="0.1">
+</div>
+
+<div class="box">
+<h2>Bank B</h2>
+<label for="rb">Yearly interest rate (%)</label>
+<input id="rb" type="number" inputmode="decimal" value="12" min="0" step="0.1">
+<label for="yb">Period (years)</label>
+<input id="yb" type="number" inputmode="decimal" value="3" min="0.1" step="0.5">
+<label for="fb">Processing fee (%)</label>
+<input id="fb" type="number" inputmode="decimal" value="0.5" min="0" step="0.1">
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<footer>Total cost = total interest + processing fee. Banks may charge other fees too, so check the offer letter. This is an estimate.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function loan(P, rate, years, feePct){
+  const n = Math.max(1, Math.round(years * 12));
+  const r = rate / 12 / 100;
+  const emi = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const interest = emi * n - P;
+  const fee = P * feePct / 100;
+  return { emi, interest, fee, cost: interest + fee };
+}
+
+function calc(){
+  const P = parseFloat($("amt").value);
+  const v = ["ra","ya","fa","rb","yb","fb"].map(id => parseFloat($(id).value));
+  const out = $("out");
+
+  if (!(P > 0) || v.some(x => !(x >= 0)) || !(v[1] > 0) || !(v[4] > 0)) {
+    out.innerHTML = '<span class="err">Enter a loan amount above 0, periods above 0, and rates and fees of 0 or more.</span>';
+    return;
+  }
+
+  const a = loan(P, v[0], v[1], v[2]);
+  const b = loan(P, v[3], v[4], v[5]);
+  const diff = Math.abs(a.cost - b.cost);
+  const verdict = Math.round(diff) === 0
+    ? "Both cost about the same"
+    : (a.cost < b.cost ? "Bank A" : "Bank B") + " is cheaper by " + fmt(diff);
+  const bestA = a.cost <= b.cost;
+
+  out.innerHTML =
+    '<p class="verdict">' + verdict + '</p>' +
+    '<div class="scroll"><table>' +
+    '<tr><th></th><th>Bank A</th><th>Bank B</th></tr>' +
+    '<tr><td>Monthly EMI</td><td>' + fmt(a.emi) + '</td><td>' + fmt(b.emi) + '</td></tr>' +
+    '<tr><td>Total interest</td><td>' + fmt(a.interest) + '</td><td>' + fmt(b.interest) + '</td></tr>' +
+    '<tr><td>Processing fee</td><td>' + fmt(a.fee) + '</td><td>' + fmt(b.fee) + '</td></tr>' +
+    '<tr class="best"><td>Total cost</td><td>' + fmt(a.cost) + (bestA ? ' ✓' : '') + '</td><td>' + fmt(b.cost) + (!bestA ? ' ✓' : '') + '</td></tr>' +
+    '</table></div>';
+}
+
+["amt","ra","ya","fa","rb","yb","fb"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
