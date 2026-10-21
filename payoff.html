@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Early Loan Payoff</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.big{font-size:2.2rem;font-weight:800;color:var(--accent);margin:0}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.row span:last-child{font-weight:600}
+.err{color:var(--warm);font-weight:600}
+.bar{height:14px;border-radius:7px;background:var(--line);margin:4px 0 12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bar.w i{background:var(--warm)}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Early Loan Payoff</h1>
+<p class="sub">See how much interest and time you save by paying extra every month.</p>
+
+<div class="box">
+<label for="amt">Loan amount (৳)</label>
+<input id="amt" type="number" inputmode="decimal" value="500000" min="1">
+<label for="rate">Yearly interest rate (%)</label>
+<input id="rate" type="number" inputmode="decimal" value="12" min="0" step="0.1">
+<label for="yrs">Loan period (years)</label>
+<input id="yrs" type="number" inputmode="decimal" value="3" min="0.5" step="0.5">
+<label for="extra">Extra payment each month (৳)</label>
+<input id="extra" type="number" inputmode="decimal" value="5000" min="0">
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<footer>Some banks charge a fee for paying a loan early, so check your loan terms before you do it. This is an estimate.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function sim(P, r, emi, extra){
+  let bal = P, interest = 0, m = 0;
+  while (bal > 0.005 && m < 1200) {
+    const i = bal * r;
+    const pay = Math.min(emi + extra, bal + i);
+    if (pay <= i) return null;
+    bal -= (pay - i);
+    interest += i;
+    m++;
+  }
+  return { months: m, interest: interest };
+}
+
+function calc(){
+  const P = parseFloat($("amt").value);
+  const rate = parseFloat($("rate").value);
+  const yrs = parseFloat($("yrs").value);
+  const extra = parseFloat($("extra").value) || 0;
+  const out = $("out");
+
+  if (!(P > 0) || !(rate >= 0) || !(yrs > 0) || !(extra >= 0)) {
+    out.innerHTML = '<span class="err">Enter an amount and period above 0, a rate of 0 or more, and an extra payment of 0 or more.</span>';
+    return;
+  }
+
+  const n = Math.max(1, Math.round(yrs * 12));
+  const r = rate / 12 / 100;
+  const emi = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const base = sim(P, r, emi, 0);
+  const fast = sim(P, r, emi, extra);
+  if (!base || !fast) { out.innerHTML = '<span class="err">These numbers do not pay the loan off. Check the inputs.</span>'; return; }
+
+  const saved = base.interest - fast.interest;
+  const monthsSaved = base.months - fast.months;
+  const yrs2 = (m) => (m / 12).toFixed(1);
+
+  out.innerHTML =
+    '<p class="big">' + fmt(saved) + '</p><div style="color:var(--mute)">interest saved, and ' + monthsSaved + ' months earlier</div>' +
+    '<div class="row"><span>Monthly EMI</span><span>' + fmt(emi) + '</span></div>' +
+    '<div class="row"><span>With extra payment</span><span>' + fmt(emi + extra) + '</span></div>' +
+    '<div style="margin-top:12px">Without extra: ' + base.months + ' months (' + yrs2(base.months) + ' yrs), interest ' + fmt(base.interest) + '</div>' +
+    '<div class="bar w"><i style="width:100%"></i></div>' +
+    '<div>With extra: ' + fast.months + ' months (' + yrs2(fast.months) + ' yrs), interest ' + fmt(fast.interest) + '</div>' +
+    '<div class="bar"><i style="width:' + Math.max(3, Math.round(fast.interest / base.interest * 100)) + '%"></i></div>';
+}
+
+["amt","rate","yrs","extra"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
