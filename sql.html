@@ -11,21 +11,30 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
 main{max-width:640px;margin:0 auto}
 h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:0 0 6px}
 .sub{color:var(--mute);margin:0 0 16px}
 .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
-select,textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;min-height:170px;margin-top:10px;resize:vertical}
-select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.btns{display:flex;gap:10px;margin-top:10px}
-button{flex:1;padding:12px;font:inherit;font-weight:700;border:0;border-radius:8px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+select,textarea,input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;min-height:150px;margin-top:10px;resize:vertical}
+input{margin-top:10px}
+select:focus-visible,textarea:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+button{flex:1 1 auto;padding:12px;font:inherit;font-weight:700;border:0;border-radius:8px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
 button.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button.del{background:transparent;color:var(--warm);border:1px solid var(--warm)}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{padding:10px}
+.tabs button:not(.on){background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .scroll{overflow-x:auto;max-height:340px;overflow-y:auto;margin-top:8px}
 table{border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums;width:100%}
 th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{position:sticky;top:0;background:var(--card)}
 .err{color:var(--warm);font-weight:600}
+.ok{color:var(--accent);font-weight:800;font-size:1.1rem}
 .note{color:var(--mute);font-size:.9rem}
-a{color:var(--accent);font-weight:600}
+pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;margin:6px 0;background:var(--bg);padding:8px;border-radius:8px}
+.item{border-top:1px solid var(--line);padding:10px 0}
+.item:first-child{border-top:0}
 code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
 </style>
 </head>
@@ -34,8 +43,15 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
 <nav id="nav"></nav>
 <script src="nav.js"></script>
 <h1>SQL Practice: BD Bank</h1>
-<p class="sub">Write a query, tap Run, and see the result. The data is made up.</p>
+<p class="sub">Practice freely, take the quiz, and save your own queries. The data is made up.</p>
 
+<div class="tabs" role="tablist">
+<button data-tab="practice" class="on" role="tab" aria-selected="true">Practice</button>
+<button data-tab="quiz" role="tab" aria-selected="false">Quiz</button>
+<button data-tab="mine" role="tab" aria-selected="false">My queries</button>
+</div>
+
+<section id="p-practice" class="panel">
 <div class="box">
 <select id="pick" aria-label="Example queries"><option value="">Pick an example query...</option></select>
 <textarea id="sql" spellcheck="false" aria-label="SQL query">SELECT * FROM customers;</textarea>
@@ -43,6 +59,9 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
 <button id="run">Run</button>
 <button id="reset" class="alt">Reset database</button>
 </div>
+<input id="title" type="text" placeholder="Name this query (optional)" aria-label="Query name">
+<div class="btns"><button id="save" class="alt">Save to My queries</button></div>
+<div class="note" id="saved" aria-live="polite"></div>
 </div>
 
 <div class="box" id="out" aria-live="polite">Loading database...</div>
@@ -52,8 +71,32 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
 <code>customers</code> (customer_id, name, city, join_date)<br>
 <code>accounts</code> (account_id, customer_id, type, balance, opened_on)<br>
 <code>loans</code> (loan_id, customer_id, amount, rate, months, start_date, status)<br>
-<code>transactions</code> (txn_id, account_id, txn_date, type, amount)
+<code>transactions</code> (txn_id, account_id, txn_date, type, amount)<br>
+<code>branches</code> (branch_id, name, city)<br>
+<code>employees</code> (emp_id, name, branch_id, role, salary)<br>
+<code>cards</code> (card_id, customer_id, card_limit, balance_due)
 </div>
+</section>
+
+<section id="p-quiz" class="panel" hidden>
+<div class="box">
+<div class="note" id="qnum"></div>
+<h2 id="qtext"></h2>
+<textarea id="qsql" spellcheck="false" aria-label="Your answer query" placeholder="Write your query here"></textarea>
+<div class="btns">
+<button id="qcheck">Check</button>
+<button id="qshow" class="alt">Show answer</button>
+<button id="qnext" class="alt">Next question</button>
+</div>
+<div class="note" id="qscore" style="margin-top:10px"></div>
+</div>
+<div class="box" id="qout" aria-live="polite">Write a query and tap Check. Column names do not matter, but the values do.</div>
+</section>
+
+<section id="p-mine" class="panel" hidden>
+<div class="box" id="mine"></div>
+<p class="note">Saved queries stay in this browser only. Write a query on the Practice tab and tap Save to add it here.</p>
+</section>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
@@ -63,6 +106,9 @@ CREATE TABLE customers (customer_id INTEGER PRIMARY KEY, name TEXT NOT NULL, cit
 CREATE TABLE accounts (account_id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, type TEXT NOT NULL, balance REAL NOT NULL, opened_on TEXT NOT NULL);
 CREATE TABLE loans (loan_id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, amount REAL NOT NULL, rate REAL NOT NULL, months INTEGER NOT NULL, start_date TEXT NOT NULL, status TEXT NOT NULL);
 CREATE TABLE transactions (txn_id INTEGER PRIMARY KEY, account_id INTEGER NOT NULL, txn_date TEXT NOT NULL, type TEXT NOT NULL, amount REAL NOT NULL);
+CREATE TABLE branches (branch_id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL);
+CREATE TABLE employees (emp_id INTEGER PRIMARY KEY, name TEXT NOT NULL, branch_id INTEGER NOT NULL, role TEXT NOT NULL, salary REAL NOT NULL);
+CREATE TABLE cards (card_id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, card_limit REAL NOT NULL, balance_due REAL NOT NULL);
 
 INSERT INTO customers VALUES
 (1,'Rahim Uddin','Dhaka','2022-03-10'),
@@ -107,6 +153,29 @@ INSERT INTO transactions VALUES
 (10,110,'2025-03-05','deposit',30000),
 (11,102,'2025-03-10','deposit',40000),
 (12,103,'2025-03-15','deposit',60000);
+
+INSERT INTO branches VALUES
+(1,'Motijheel','Dhaka'),
+(2,'Agrabad','Chattogram'),
+(3,'Zindabazar','Sylhet'),
+(4,'Banani','Dhaka');
+
+INSERT INTO employees VALUES
+(1,'Aminul Haque',1,'Manager',120000),
+(2,'Shirin Sultana',1,'Teller',45000),
+(3,'Rafiq Ahmed',2,'Manager',110000),
+(4,'Mitu Das',2,'Loan Officer',70000),
+(5,'Jashim Uddin',3,'Manager',105000),
+(6,'Lutfa Begum',4,'Loan Officer',72000),
+(7,'Tariq Aziz',4,'Teller',43000),
+(8,'Nadia Rahman',1,'Loan Officer',75000);
+
+INSERT INTO cards VALUES
+(1,1,200000,45000),
+(2,2,300000,180000),
+(3,3,100000,60000),
+(4,6,150000,20000),
+(5,8,80000,5000);
 `;
 
 const EXAMPLES = [
@@ -123,21 +192,43 @@ const EXAMPLES = [
 ["11. Top 3 depositors", "SELECT c.name, SUM(t.amount) AS total_deposited\nFROM transactions t\nJOIN accounts a ON a.account_id = t.account_id\nJOIN customers c ON c.customer_id = a.customer_id\nWHERE t.type = 'deposit'\nGROUP BY c.customer_id, c.name\nORDER BY total_deposited DESC\nLIMIT 3;"],
 ["12. Rank inside each city", "WITH totals AS (\n  SELECT c.name, c.city, SUM(a.balance) AS total_balance\n  FROM customers c\n  JOIN accounts a ON a.customer_id = c.customer_id\n  GROUP BY c.customer_id, c.name, c.city\n)\nSELECT city, name, total_balance,\n  RANK() OVER (PARTITION BY city ORDER BY total_balance DESC) AS rank_in_city\nFROM totals\nORDER BY city, rank_in_city;"],
 ["13. Running net, account 103", "SELECT txn_date, type, amount,\n  SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END)\n    OVER (ORDER BY txn_date, txn_id) AS running_net\nFROM transactions\nWHERE account_id = 103\nORDER BY txn_date, txn_id;"],
-["14. Overdue loan share (%)", "SELECT ROUND(\n  100.0 * SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) / SUM(amount), 1\n) AS overdue_percent\nFROM loans;"]
+["14. Overdue loan share (%)", "SELECT ROUND(\n  100.0 * SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) / SUM(amount), 1\n) AS overdue_percent\nFROM loans;"],
+["15. Employees per branch", "SELECT b.name AS branch, COUNT(e.emp_id) AS employees\nFROM branches b\nLEFT JOIN employees e ON e.branch_id = b.branch_id\nGROUP BY b.branch_id, b.name;"],
+["16. Average salary by role", "SELECT role, ROUND(AVG(salary)) AS avg_salary\nFROM employees\nGROUP BY role\nORDER BY avg_salary DESC;"],
+["17. Cards over half the limit", "SELECT c.name, k.card_limit, k.balance_due,\n  ROUND(100.0 * k.balance_due / k.card_limit) AS used_percent\nFROM cards k\nJOIN customers c ON c.customer_id = k.customer_id\nWHERE k.balance_due > k.card_limit / 2;"],
+["18. Top earner in each branch", "SELECT branch, name, salary\nFROM (\n  SELECT b.name AS branch, e.name, e.salary,\n    RANK() OVER (PARTITION BY b.branch_id ORDER BY e.salary DESC) AS rk\n  FROM employees e\n  JOIN branches b ON b.branch_id = e.branch_id\n)\nWHERE rk = 1;"]
+];
+
+const QUIZ = [
+{ q: "Show the name and city of customers from Chattogram.",
+  sol: "SELECT name, city FROM customers WHERE city = 'Chattogram';" },
+{ q: "Show the account_id and balance of accounts with a balance under 100,000.",
+  sol: "SELECT account_id, balance FROM accounts WHERE balance < 100000;" },
+{ q: "Show each customer's name with their loan amount.",
+  sol: "SELECT c.name, l.amount FROM customers c JOIN loans l ON l.customer_id = c.customer_id;" },
+{ q: "Show each city with the total loan amount of its customers (columns: city, total).",
+  sol: "SELECT c.city, SUM(l.amount) AS total FROM customers c JOIN loans l ON l.customer_id = c.customer_id GROUP BY c.city;" },
+{ q: "Show the names of customers who have a loan AND a Current account.",
+  sol: "SELECT DISTINCT c.name FROM customers c JOIN loans l ON l.customer_id = c.customer_id JOIN accounts a ON a.customer_id = c.customer_id WHERE a.type = 'Current';" },
+{ q: "Show each branch name with its number of employees (columns: branch name, count).",
+  sol: "SELECT b.name, COUNT(e.emp_id) FROM branches b LEFT JOIN employees e ON e.branch_id = b.branch_id GROUP BY b.branch_id, b.name;" },
+{ q: "Show the names of customers whose card balance_due is more than half of their card_limit.",
+  sol: "SELECT c.name FROM cards k JOIN customers c ON c.customer_id = k.customer_id WHERE k.balance_due > k.card_limit / 2;" }
 ];
 
 const $ = id => document.getElementById(id);
 let SQL, db;
 
-function newDb(){
-  db = new SQL.Database();
-  db.run(SETUP);
-}
+function newDb(){ db = new SQL.Database(); db.run(SETUP); }
 
-function show(results){
-  const out = $("out");
-  out.innerHTML = "";
-  if (!results.length) { out.textContent = "Done. This query returned no rows."; return; }
+function renderInto(container, results){
+  if (!results.length) {
+    const p = document.createElement("div");
+    p.className = "note";
+    p.textContent = "Done. This query returned no rows.";
+    container.appendChild(p);
+    return;
+  }
   results.forEach(r => {
     const info = document.createElement("div");
     info.className = "note";
@@ -152,22 +243,36 @@ function show(results){
       row.forEach(v => { tr.insertCell().textContent = v === null ? "NULL" : v; });
     });
     wrap.appendChild(t);
-    out.appendChild(info);
-    out.appendChild(wrap);
+    container.appendChild(info);
+    container.appendChild(wrap);
   });
 }
 
+function showError(container, e){
+  const p = document.createElement("span");
+  p.className = "err";
+  p.textContent = "Error: " + e.message;
+  container.appendChild(p);
+}
+
+/* ---------- Tabs ---------- */
+function showTab(t){
+  ["practice", "quiz", "mine"].forEach(n => { $("p-" + n).hidden = (n !== t); });
+  document.querySelectorAll(".tabs button").forEach(b => {
+    const on = b.dataset.tab === t;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  });
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+/* ---------- Practice ---------- */
 function run(){
   if (!db) return;
-  try {
-    show(db.exec($("sql").value));
-  } catch (e) {
-    $("out").innerHTML = "";
-    const p = document.createElement("span");
-    p.className = "err";
-    p.textContent = "Error: " + e.message;
-    $("out").appendChild(p);
-  }
+  const out = $("out");
+  out.innerHTML = "";
+  try { renderInto(out, db.exec($("sql").value)); }
+  catch (e) { showError(out, e); }
 }
 
 EXAMPLES.forEach((ex, i) => {
@@ -175,7 +280,6 @@ EXAMPLES.forEach((ex, i) => {
   o.value = i; o.textContent = ex[0];
   $("pick").appendChild(o);
 });
-
 $("pick").addEventListener("change", () => {
   const i = $("pick").value;
   if (i === "") return;
@@ -186,6 +290,108 @@ $("run").addEventListener("click", run);
 $("reset").addEventListener("click", () => { newDb(); $("out").textContent = "Database reset. Run a query."; });
 $("sql").addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") run(); });
 
+/* ---------- My queries ---------- */
+const MKEY = "my-sql-v1";
+function loadMine(){
+  try { const v = JSON.parse(localStorage.getItem(MKEY)); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveMine(){ try { localStorage.setItem(MKEY, JSON.stringify(mine)); } catch (e) {} }
+let mine = loadMine();
+
+function renderMine(){
+  const box = $("mine");
+  box.innerHTML = "";
+  if (!mine.length) { box.textContent = "Nothing saved yet. Write a query on the Practice tab and tap Save."; return; }
+  mine.forEach((m, i) => {
+    const d = document.createElement("div");
+    d.className = "item";
+    const h = document.createElement("strong");
+    h.textContent = m.title;
+    const pre = document.createElement("pre");
+    pre.textContent = m.sql;
+    const btns = document.createElement("div");
+    btns.className = "btns";
+    const load = document.createElement("button");
+    load.textContent = "Load and run";
+    load.addEventListener("click", () => { $("sql").value = m.sql; showTab("practice"); run(); });
+    const del = document.createElement("button");
+    del.className = "del"; del.textContent = "Delete";
+    del.addEventListener("click", () => { mine.splice(i, 1); saveMine(); renderMine(); });
+    btns.appendChild(load); btns.appendChild(del);
+    d.appendChild(h); d.appendChild(pre); d.appendChild(btns);
+    box.appendChild(d);
+  });
+}
+
+$("save").addEventListener("click", () => {
+  const sql = $("sql").value.trim();
+  if (!sql) { $("saved").textContent = "Write a query first."; return; }
+  const title = $("title").value.trim() || ("My query " + (mine.length + 1));
+  mine.push({ title: title, sql: sql });
+  saveMine(); renderMine();
+  $("title").value = "";
+  $("saved").textContent = "Saved. Find it on the My queries tab.";
+});
+
+/* ---------- Quiz ---------- */
+let qi = 0;
+const solved = new Set();
+
+function norm(res){
+  if (!res.length) return [];
+  const last = res[res.length - 1];
+  return last.values
+    .map(r => JSON.stringify(r.map(v => typeof v === "number" ? Math.round(v * 100) / 100 : v)))
+    .sort();
+}
+
+function showQ(){
+  $("qnum").textContent = "Question " + (qi + 1) + " of " + QUIZ.length;
+  $("qtext").textContent = QUIZ[qi].q;
+  $("qsql").value = "";
+  $("qout").textContent = "Write a query and tap Check. Column names do not matter, but the values do.";
+  $("qscore").textContent = "Solved: " + solved.size + " of " + QUIZ.length;
+}
+
+$("qcheck").addEventListener("click", () => {
+  if (!db) return;
+  const out = $("qout");
+  out.innerHTML = "";
+  const mineSql = $("qsql").value.trim();
+  if (!mineSql) { out.textContent = "Write a query first."; return; }
+  try {
+    const mineRes = db.exec(mineSql);
+    const a = norm(mineRes), b = norm(db.exec(QUIZ[qi].sol));
+    const same = a.length === b.length && a.every((x, i) => x === b[i]);
+    const v = document.createElement("div");
+    if (same) {
+      v.className = "ok"; v.textContent = "Correct!";
+      solved.add(qi);
+    } else {
+      v.className = "err"; v.textContent = "Not quite. The result does not match. Check your columns, filters and joins, then try again.";
+    }
+    out.appendChild(v);
+    renderInto(out, mineRes);
+    $("qscore").textContent = "Solved: " + solved.size + " of " + QUIZ.length;
+  } catch (e) { showError(out, e); }
+});
+
+$("qshow").addEventListener("click", () => {
+  const out = $("qout");
+  out.innerHTML = "";
+  const h = document.createElement("strong");
+  h.textContent = "One possible answer:";
+  const pre = document.createElement("pre");
+  pre.textContent = QUIZ[qi].sol;
+  out.appendChild(h); out.appendChild(pre);
+});
+
+$("qnext").addEventListener("click", () => { qi = (qi + 1) % QUIZ.length; showQ(); });
+
+/* ---------- Start ---------- */
+renderMine();
+showQ();
 initSqlJs({ locateFile: f => "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/" + f })
   .then(S => { SQL = S; newDb(); run(); })
   .catch(() => { $("out").textContent = "Could not load the SQL engine. Check your internet and refresh."; });
