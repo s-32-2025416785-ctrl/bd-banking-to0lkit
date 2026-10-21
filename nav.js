@@ -1,12 +1,14 @@
 (function () {
   var pages = [
     ["index.html", "EMI"],
+    ["payoff.html", "Payoff"],
     ["fdr.html", "FDR"],
     ["dps.html", "DPS"],
     ["savings.html", "Savings"],
     ["compare.html", "Compare"],
     ["banks.html", "Banks"],
     ["real.html", "Inflation"],
+    ["cards.html", "Flashcards"],
     ["sql.html", "SQL"]
   ];
   var here = location.pathname.split("/").pop() || "index.html";
@@ -24,4 +26,4 @@
     }
     nav.appendChild(a);
   });
-})(); 
+})();
