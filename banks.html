@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Rate Comparison</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{text-align:left;font-size:.85rem;color:var(--mute);padding:0 4px 6px}
+td{padding:4px}
+input{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input.best{border:2px solid var(--accent);font-weight:700}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+th:nth-child(1){width:42%}
+th:nth-child(4){width:44px}
+.del{width:100%;padding:8px 0;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--warm);font:inherit;font-weight:700;cursor:pointer}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btns button{flex:1 1 auto;padding:10px 12px;font:inherit;font-weight:700;border-radius:8px;cursor:pointer;background:var(--accent);color:var(--accent-ink);border:0}
+.btns button.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.sum div{padding:6px 0;border-top:1px solid var(--line)}
+.sum div:first-child{border-top:0}
+.sum b{color:var(--accent)}
+.note{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Bank Rate Comparison</h1>
+<p class="sub">Type in the rates from each bank. The best FDR rate and the cheapest loan get a highlighted box.</p>
+
+<div class="box">
+<table>
+<thead><tr><th>Bank</th><th>FDR %</th><th>Loan %</th><th></th></tr></thead>
+<tbody id="body"></tbody>
+</table>
+<div class="btns">
+<button id="add">Add bank</button>
+<button id="sortF" class="alt">Sort: best FDR</button>
+<button id="sortL" class="alt">Sort: cheapest loan</button>
+</div>
+</div>
+
+<div class="box sum" id="sum" aria-live="polite"></div>
+
+<p class="note">The rows below start as examples. Replace them with real rates from each bank's website or branch, since rates change often and differ by amount and period. Your list is saved in this browser only.</p>
+</main>
+
+<script>
+const KEY = "bank-rates-v1";
+const DEFAULTS = [
+  { name: "Example Bank A", fdr: "8.0", loan: "11.5" },
+  { name: "Example Bank B", fdr: "7.5", loan: "10.5" },
+  { name: "Example Bank C", fdr: "8.5", loan: "12.0" }
+];
+
+function load(){
+  try {
+    const s = localStorage.getItem(KEY);
+    const v = s ? JSON.parse(s) : null;
+    return Array.isArray(v) ? v : null;
+  } catch (e) { return null; }
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch (e) {}
+}
+
+let rows = load() || DEFAULTS.map(r => Object.assign({}, r));
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseFloat(v); return isNaN(n) || n < 0 ? null : n; };
+
+function makeInput(type, value, label, onInput){
+  const el = document.createElement("input");
+  el.type = type;
+  if (type === "number") { el.inputMode = "decimal"; el.step = "0.01"; el.min = "0"; }
+  el.value = value;
+  el.setAttribute("aria-label", label);
+  el.addEventListener("input", () => { onInput(el.value); save(); highlight(); });
+  return el;
+}
+
+function render(){
+  const body = $("body");
+  body.innerHTML = "";
+  rows.forEach((r, i) => {
+    const tr = body.insertRow();
+    tr.insertCell().appendChild(makeInput("text", r.name, "Bank name", v => r.name = v));
+    const c2 = tr.insertCell(); c2.appendChild(makeInput("number", r.fdr, "FDR rate", v => r.fdr = v)); c2.dataset.k = "fdr";
+    const c3 = tr.insertCell(); c3.appendChild(makeInput("number", r.loan, "Loan rate", v => r.loan = v)); c3.dataset.k = "loan";
+    const c4 = tr.insertCell();
+    const b = document.createElement("button");
+    b.className = "del"; b.textContent = "×"; b.setAttribute("aria-label", "Remove bank");
+    b.addEventListener("click", () => { rows.splice(i, 1); save(); render(); });
+    c4.appendChild(b);
+  });
+  highlight();
+}
+
+function highlight(){
+  const fd = rows.map(r => num(r.fdr)).filter(x => x !== null);
+  const ln = rows.map(r => num(r.loan)).filter(x => x !== null);
+  const bestF = fd.length ? Math.max(...fd) : null;
+  const bestL = ln.length ? Math.min(...ln) : null;
+
+  Array.from($("body").rows).forEach((tr, i) => {
+    const f = num(rows[i].fdr), l = num(rows[i].loan);
+    tr.cells[1].firstChild.classList.toggle("best", f !== null && f === bestF);
+    tr.cells[2].firstChild.classList.toggle("best", l !== null && l === bestL);
+  });
+
+  const names = (key, val) => rows
+    .filter(r => num(r[key]) === val)
+    .map(r => r.name.trim() || "Unnamed bank")
+    .join(", ");
+
+  const s = $("sum");
+  s.innerHTML = "";
+  const line = (label, val, who) => {
+    const d = document.createElement("div");
+    d.append(label + ": ");
+    const b = document.createElement("b");
+    b.textContent = who + " (" + val.toFixed(2) + "%)";
+    d.appendChild(b);
+    s.appendChild(d);
+  };
+  if (bestF !== null) line("Best FDR rate", bestF, names("fdr", bestF));
+  if (bestL !== null) line("Cheapest loan", bestL, names("loan", bestL));
+  if (bestF === null && bestL === null) s.textContent = "Add some rates to compare.";
+}
+
+function sortBy(key, dir){
+  rows.sort((a, b) => {
+    const x = num(a[key]), y = num(b[key]);
+    if (x === null && y === null) return 0;
+    if (x === null) return 1;
+    if (y === null) return -1;
+    return dir * (x - y);
+  });
+  save(); render();
+}
+
+$("add").addEventListener("click", () => { rows.push({ name: "", fdr: "", loan: "" }); save(); render(); });
+$("sortF").addEventListener("click", () => sortBy("fdr", -1));
+$("sortL").addEventListener("click", () => sortBy("loan", 1));
+render();
+</script>
+</body>
+</html>
