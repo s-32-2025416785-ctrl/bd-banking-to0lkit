@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Planner</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+label:first-child{margin-top:0}
+input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.item{padding:10px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0;padding-top:0}
+.top{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.small{color:var(--mute);font-size:.85rem}
+.bar{height:12px;border-radius:6px;background:var(--line);margin:6px 0;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bar i.w{background:var(--warm)}
+.err{color:var(--warm);font-weight:600}
+.left{font-weight:700;margin-top:6px}
+footer{color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>Budget Planner</h1>
+<p class="sub">Compare your monthly spending with the 50/30/20 rule: 50% needs, 30% wants, 20% savings.</p>
+
+<div class="box">
+<label for="inc">Monthly income (৳)</label>
+<input id="inc" type="number" inputmode="decimal" value="25000" min="1">
+<label for="needs">Needs: rent, food, transport, bills (৳)</label>
+<input id="needs" type="number" inputmode="decimal" value="14000" min="0">
+<label for="wants">Wants: eating out, shopping, fun (৳)</label>
+<input id="wants" type="number" inputmode="decimal" value="6000" min="0">
+<label for="sav">Savings (৳)</label>
+<input id="sav" type="number" inputmode="decimal" value="3000" min="0">
+</div>
+
+<div class="box" id="out" aria-live="polite"></div>
+
+<footer>50/30/20 is a rule of thumb, not a law. If your needs are above 50% because of rent or tuition, that is common, so adjust the targets to fit your life.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => "৳" + Math.round(n).toLocaleString("en-IN");
+
+function calc(){
+  const inc = parseFloat($("inc").value);
+  const needs = parseFloat($("needs").value);
+  const wants = parseFloat($("wants").value);
+  const sav = parseFloat($("sav").value);
+  const out = $("out");
+
+  if (!(inc > 0) || !(needs >= 0) || !(wants >= 0) || !(sav >= 0)) {
+    out.innerHTML = '<span class="err">Enter an income above 0 and amounts of 0 or more.</span>';
+    return;
+  }
+
+  const rows = [
+    ["Needs", needs, 0.5, false],
+    ["Wants", wants, 0.3, false],
+    ["Savings", sav, 0.2, true]
+  ];
+
+  let html = "";
+  rows.forEach(r => {
+    const name = r[0], amt = r[1], share = r[2], isSave = r[3];
+    const target = inc * share;
+    const pct = Math.round(amt / inc * 100);
+    const diff = amt - target;
+    const bad = isSave ? diff < 0 : diff > 0;
+    const width = Math.min(100, target > 0 ? amt / target * 100 : 0);
+    let note;
+    if (Math.round(diff) === 0) note = "Right on target";
+    else if (isSave) note = diff < 0 ? "Below target by " + fmt(-diff) : "Above target by " + fmt(diff);
+    else note = diff > 0 ? "Over target by " + fmt(diff) : "Under target by " + fmt(-diff);
+    html +=
+      '<div class="item"><div class="top"><span>' + name + ' (' + Math.round(share * 100) + '% target)</span><span>' + fmt(amt) + ' · ' + pct + '%</span></div>' +
+      '<div class="bar"><i class="' + (bad ? "w" : "") + '" style="width:' + width + '%"></i></div>' +
+      '<div class="small">Target ' + fmt(target) + '. ' + note + '.</div></div>';
+  });
+
+  const left = inc - needs - wants - sav;
+  if (left < 0) {
+    html += '<div class="left err">You plan to spend ' + fmt(-left) + ' more than you earn.</div>';
+  } else {
+    html += '<div class="left">Not assigned yet: ' + fmt(left) + ' (' + Math.round(left / inc * 100) + '%). Put it in savings or keep it as a buffer.</div>';
+  }
+  out.innerHTML = html;
+}
+
+["inc","needs","wants","sav"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>
