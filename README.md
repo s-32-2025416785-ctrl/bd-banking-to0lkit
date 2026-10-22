@@ -1,44 +1,37 @@
 # BD Banking Toolkit
 
-A small project built by a Banking & Insurance student at the University of Dhaka. It has two parts: a loan calculator and a SQL practice set.
+Free banking calculators, learning tools and a SQL playground for students, built entirely from a phone with plain HTML, CSS and JavaScript.
 
-## 1. Loan EMI Calculator
+**Live site:** https://s-32-2025416785-ctrl.github.io/bd-banking-to0lkit/home.html
 
-Enter a loan amount, yearly interest rate and period. It shows the monthly EMI, total interest, total payable and a full month-by-month repayment schedule, all in taka.
 
-**Live site:** PASTE_YOUR_LIVE_LINK_HERE
 
-Built with plain HTML, CSS and JavaScript, hosted free on GitHub Pages.
+![BD Banking Toolkit home page](screenshot.png)
 
-## 2. SQL Banking Practice Set
 
-A made-up bank database with four tables: customers, accounts, loans and transactions.
 
-- `sql/setup.sql` creates the tables and fills them with sample data
-- `sql/queries.sql` has 14 solved queries, from easy to hard
+## What is inside
 
-Topics covered: WHERE, ORDER BY, JOINs, GROUP BY, HAVING, subqueries, CTEs and window functions (RANK and running totals).
+**Loans:** EMI calculator with a full repayment schedule and charts, early payoff calculator, side-by-side loan comparison.
 
-**How to run it:** open sqliteonline.com, choose SQLite, run `setup.sql`, then run the queries one at a time.
+**Saving and deposits:** FDR maturity calculator, DPS calculator, savings goal planner.
 
-## EMI formula
+**Money sense:** 50/30/20 budget planner, Rule of 72 and inflation vs FDR, currency converter, credit score simulator, bank rate comparison.
 
-EMI = P × r × (1+r)^n ÷ ((1+r)^n − 1)
+**Learn:** finance flashcards, a SQL playground with 18 solved queries, a 7-question quiz and a place to save your own queries, and a dashboard drawn from SQL queries.
 
-P is the loan amount, r is the monthly interest rate and n is the number of months.
+Every page works in English and Bangla (switch in the menu).
 
-## 2. FDR Maturity Calculator
+## SQL practice
 
-Enter a deposit, yearly rate, period, how often interest is added and the tax rate. It shows the interest earned, tax and the final amount you receive.
+A made-up bank database with seven tables: customers, accounts, loans, transactions, branches, employees and cards. The queries run in the browser using SQLite (sql.js). The same files are in the `sql/` folder.
 
-**Live page:** https://s-32-2025416785-ctrl.github.io/bd-banking-to0lkit/fdr.html
+## Notes
 
-## 3. SQL Practice (runs in the browser)
+- All names and numbers are made up.
+- Calculators give estimates. Real banks add fees and use their own rules, so check with your bank.
+- Bank rates on the comparison page are typed in by the user.
 
-A made-up bank database with four tables: customers, accounts, loans and transactions. Write a query, tap Run, and see the result, with 14 solved examples from easy to hard.
+## Built with
 
-**Try it:** https://s-32-2025416785-ctrl.github.io/bd-banking-to0lkit/sql.html
-
-The same files are in the `sql/` folder (`setup.sql` and `queries.sql`).
-
-All customer names and numbers are made up for practice.
+HTML, CSS, JavaScript, SVG charts, sql.js, GitHub Pages.
