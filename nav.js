@@ -8,6 +8,9 @@
     ["compare.html", "Compare"],
     ["banks.html", "Banks"],
     ["real.html", "Inflation"],
+    ["budget.html", "Budget"],
+    ["currency.html", "Currency"],
+    ["credit.html", "Credit"],
     ["cards.html", "Flashcards"],
     ["dashboard.html", "Dashboard"],
     ["sql.html", "SQL"]
