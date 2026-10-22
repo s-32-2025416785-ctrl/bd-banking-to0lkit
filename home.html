@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BD Banking Toolkit</title>
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#16261d;--mute:#5d6e63;--line:#d9e2da;--accent:#0b6b4a;--accent-ink:#fff;--warm:#b4461f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a14;--card:#15241b;--ink:#e6efe8;--mute:#93a59a;--line:#264033;--accent:#3fbf8b;--accent-ink:#06150e;--warm:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 48px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.8rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:22px 0 8px;color:var(--accent)}
+.sub{color:var(--mute);margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink);text-decoration:none}
+.card strong{display:block;color:var(--accent)}
+.card span{color:var(--mute);font-size:.9rem}
+.card:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+<nav id="nav"></nav>
+<script src="nav.js"></script>
+<h1>BD Banking Toolkit</h1>
+<p class="sub">Calculators, practice tools and a SQL playground for banking students.</p>
+
+<h2>Loans</h2>
+<div class="grid">
+<a class="card" href="index.html"><strong>Loan EMI Calculator</strong><span>Monthly payment and full repayment table.</span></a>
+<a class="card" href="payoff.html"><strong>Early Loan Payoff</strong><span>See what extra payments save you.</span></a>
+<a class="card" href="compare.html"><strong>Loan Comparison</strong><span>Two loan offers, side by side.</span></a>
+</div>
+
+<h2>Saving and deposits</h2>
+<div class="grid">
+<a class="card" href="fdr.html"><strong>FDR Maturity Calculator</strong><span>Fixed deposit maturity after tax.</span></a>
+<a class="card" href="dps.html"><strong>DPS Calculator</strong><span>Monthly deposit scheme maturity.</span></a>
+<a class="card" href="savings.html"><strong>Savings Goal Planner</strong><span>How much to save each month.</span></a>
+</div>
+
+<h2>Money sense</h2>
+<div class="grid">
+<a class="card" href="budget.html"><strong>Budget Planner</strong><span>The 50/30/20 rule for your income.</span></a>
+<a class="card" href="real.html"><strong>Doubling and Inflation</strong><span>Rule of 72 and real FDR returns.</span></a>
+<a class="card" href="currency.html"><strong>Currency Converter</strong><span>Convert taka with your own rate.</span></a>
+<a class="card" href="credit.html"><strong>Credit Score Simulator</strong><span>A made-up score and how to improve it.</span></a>
+<a class="card" href="banks.html"><strong>Bank Rate Comparison</strong><span>Compare FDR and loan rates.</span></a>
+</div>
+
+<h2>Learn</h2>
+<div class="grid">
+<a class="card" href="cards.html"><strong>Finance Flashcards</strong><span>Banking terms to flip and learn.</span></a>
+<a class="card" href="sql.html"><strong>SQL Practice: BD Bank</strong><span>Practice, quiz and save your queries.</span></a>
+<a class="card" href="dashboard.html"><strong>Bank Dashboard</strong><span>Charts drawn from SQL queries.</span></a>
+</div>
+</main>
+</body>
+</html>
