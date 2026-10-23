@@ -91,3 +91,33 @@ ORDER BY city, rank_in_city;
 SELECT txn_date, type, amount,
        SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END)
          OVE
+-- ===== MORE TABLES =====
+
+-- 15. Employees per branch (LEFT JOIN keeps branches with no staff)
+SELECT b.name AS branch, COUNT(e.emp_id) AS employees
+FROM branches b
+LEFT JOIN employees e ON e.branch_id = b.branch_id
+GROUP BY b.branch_id, b.name;
+
+-- 16. Average salary by role
+SELECT role, ROUND(AVG(salary)) AS avg_salary
+FROM employees
+GROUP BY role
+ORDER BY avg_salary DESC;
+
+-- 17. Customers using more than half of their card limit
+SELECT c.name, k.card_limit, k.balance_due,
+  ROUND(100.0 * k.balance_due / k.card_limit) AS used_percent
+FROM cards k
+JOIN customers c ON c.customer_id = k.customer_id
+WHERE k.balance_due > k.card_limit / 2;
+
+-- 18. Top earner in each branch (window function in a subquery)
+SELECT branch, name, salary
+FROM (
+  SELECT b.name AS branch, e.name, e.salary,
+    RANK() OVER (PARTITION BY b.branch_id ORDER BY e.salary DESC) AS rk
+  FROM employees e
+  JOIN branches b ON b.branch_id = e.branch_id
+)
+WHERE rk = 1;
