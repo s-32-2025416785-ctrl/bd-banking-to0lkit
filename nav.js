@@ -1,4 +1,21 @@
 (function () {
+  /* ---------- shared stylesheet and theme ---------- */
+  var css = document.querySelector("link[data-site-style]");
+  if (!css) {
+    css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "style.css";
+    css.setAttribute("data-site-style", "1");
+    document.head.appendChild(css);
+  }
+  var TKEY = "site-theme";
+  var theme = "dark";
+  try {
+    var st = localStorage.getItem(TKEY);
+    if (st === "light" || st === "dark") theme = st;
+  } catch (e) {}
+  document.documentElement.setAttribute("data-theme", theme);
+
   var pages = [
     ["home.html", "Home"],
     ["index.html", "EMI"],
@@ -19,18 +36,33 @@
   var here = location.pathname.split("/").pop() || "index.html";
   var nav = document.getElementById("nav");
   if (!nav) return;
-  nav.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--line)";
+
   pages.forEach(function (p) {
     var a = document.createElement("a");
     a.href = p[0];
     a.textContent = p[1];
-    a.style.cssText = "color:var(--accent);font-weight:600;text-decoration:none";
-    if (p[0] === here) {
-      a.style.textDecoration = "underline";
-      a.setAttribute("aria-current", "page");
-    }
+    if (p[0] === here) a.setAttribute("aria-current", "page");
     nav.appendChild(a);
   });
+
+  function center() {
+    var cur = nav.querySelector("[aria-current]");
+    if (cur) nav.scrollLeft = Math.max(0, cur.offsetLeft - 24);
+  }
+  center();
+  css.addEventListener("load", center);
+
+  /* ---------- theme button ---------- */
+  var tbtn = document.createElement("button");
+  tbtn.type = "button";
+  function setTheme(t) {
+    theme = t;
+    try { localStorage.setItem(TKEY, t); } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t);
+    tbtn.textContent = t === "dark" ? "☀" : "☾";
+    tbtn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+  }
+  tbtn.addEventListener("click", function () { setTheme(theme === "dark" ? "light" : "dark"); });
 
   /* ---------- Bangla switch ---------- */
   var KEY = "site-lang";
@@ -46,7 +78,12 @@
 
   var BN = {
     "BD Banking Toolkit": "বিডি ব্যাংকিং টুলকিট",
-    "Calculators, practice tools and a SQL playground for banking students.": "ব্যাংকিং শিক্ষার্থীদের জন্য ক্যালকুলেটর, অনুশীলন টুল ও SQL প্লেগ্রাউন্ড।",
+    "Free to use": "বিনামূল্যে ব্যবহার করুন",
+    "Banking math, made clear.": "ব্যাংকিং হিসাব, সহজ ভাষায়।",
+    "Calculators, charts and a SQL playground for banking students. Everything runs in your browser.": "ব্যাংকিং শিক্ষার্থীদের জন্য ক্যালকুলেটর, চার্ট ও SQL প্লেগ্রাউন্ড। সবকিছু আপনার ব্রাউজারেই চলে।",
+    "Start with EMI": "ইএমআই দিয়ে শুরু করুন",
+    "Practice SQL": "SQL অনুশীলন",
+    "tools": "টুল", "languages": "ভাষা", "SQL queries": "SQL কুয়েরি",
     "Loans": "ঋণ", "Saving and deposits": "সঞ্চয় ও আমানত", "Money sense": "অর্থ সচেতনতা", "Learn": "শিখুন",
 
     "Loan EMI Calculator": "ঋণের ইএমআই ক্যালকুলেটর",
@@ -195,9 +232,10 @@
 
   var btn = document.createElement("button");
   btn.type = "button";
+  btn.className = "push";
   btn.setAttribute("aria-label", "Switch language between English and Bangla");
-  btn.style.cssText = "margin-left:auto;font:inherit;font-weight:600;padding:2px 12px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);cursor:pointer";
   nav.appendChild(btn);
+  nav.appendChild(tbtn);
 
   function setLang(l) {
     lang = l;
@@ -207,5 +245,7 @@
     if (l === "bn") walk(document.body); else restore();
   }
   btn.addEventListener("click", function () { setLang(lang === "bn" ? "en" : "bn"); });
+
+  setTheme(theme);
   setLang(lang);
 })();
